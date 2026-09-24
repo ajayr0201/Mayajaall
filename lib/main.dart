@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:flutter/services.dart';
+import 'dart:async';
 
 void main() {
   runApp(const MyApp());
@@ -17,34 +17,37 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const VideoApp(),
+      home: const VideoPlayerScreen(),
     );
   }
 }
 
-class VideoApp extends StatefulWidget {
-  const VideoApp({super.key});
+class VideoPlayerScreen extends StatefulWidget {
+  const VideoPlayerScreen({super.key});
 
   @override
-  State<VideoApp> createState() => _VideoAppState();
+  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
-class _VideoAppState extends State<VideoApp> {
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   VideoPlayerController? _controller;
-  // Default sample video, jo baad mein link se replace ho jayegi
-  String videoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+  // Default video jab koi link na ho
+  String currentVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+  bool isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initPlayer(videoUrl);
+    _initPlayer(currentVideoUrl);
   }
 
   void _initPlayer(String url) {
     _controller?.dispose();
     _controller = VideoPlayerController.networkUrl(Uri.parse(url))
       ..initialize().then((_) {
-        setState(() {});
+        setState(() {
+          isInitialized = true;
+        });
         _controller?.play();
       });
   }
@@ -52,31 +55,35 @@ class _VideoAppState extends State<VideoApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Mayajaal Video Player'),
+        title: const Text('Mayajaal Video Streaming'),
+        backgroundColor: Colors.grey[900],
       ),
       body: Center(
-        child: _controller != null && _controller!.value.isInitialized
+        child: isInitialized && _controller != null
             ? AspectRatio(
                 aspectRatio: _controller!.value.aspectRatio,
                 child: VideoPlayer(_controller!),
               )
-            : const CircularProgressIndicator(),
+            : const CircularProgressIndicator(color: Colors.white),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _controller!.value.isPlaying
-                ? _controller!.pause()
-                : _controller!.play();
-          });
-        },
-        child: Icon(
-          _controller != null && _controller!.value.isPlaying
-              ? Icons.pause
-              : Icons.play_arrow,
-        ),
-      ),
+      floatingActionButton: isInitialized
+          ? FloatingActionButton(
+              backgroundColor: Colors.white,
+              onPressed: () {
+                setState(() {
+                  _controller!.value.isPlaying
+                      ? _controller!.pause()
+                      : _controller!.play();
+                });
+              },
+              child: Icon(
+                _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                color: Colors.black,
+              ),
+            )
+          : null,
     );
   }
 
