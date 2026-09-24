@@ -32,7 +32,9 @@ jobs:
       - name: Ensure Android Manifest Exists
         run: |
           mkdir -p android/app/src/main
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          
+          # Create manifest at the root android folder where flutter looks for it
+          MANIFEST_PATH="android/AndroidManifest.xml"
           if [ ! -f "$MANIFEST_PATH" ]; then
             echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' > $MANIFEST_PATH
             echo '    <application android:label="Mayajaal" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">' >> $MANIFEST_PATH
@@ -46,6 +48,9 @@ jobs:
             echo '    </application>' >> $MANIFEST_PATH
             echo '</manifest>' >> $MANIFEST_PATH
           fi
+          
+          # Copy it to src/main as well just in case Gradle looks there too
+          cp android/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
       - name: Fix Min SDK Version
         run: |
