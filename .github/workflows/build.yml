@@ -41,6 +41,83 @@ jobs:
           flutter create . --platforms=android --org com.example.mayajaal --project-name mayajaal
           chmod +x android/gradlew
 
+      - name: Restore Correct pubspec.yaml with Webview
+        run: |
+          cat << 'EOF' > pubspec.yaml
+          name: mayajaal
+          description: A new Flutter project.
+          publish_to: 'none'
+          version: 1.0.0+1
+
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+
+          dependencies:
+            flutter:
+              sdk: flutter
+            webview_flutter: ^4.4.4
+
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+            flutter_lints: ^3.0.0
+
+          flutter:
+            uses-material-design: true
+          EOF
+
+      - name: Restore Correct main.dart with WebView
+        run: |
+          cat << 'EOF' > lib/main.dart
+          import 'package:flutter/material.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
+
+          void main() {
+            runApp(const MyApp());
+          }
+
+          class MyApp extends StatelessWidget {
+            const MyApp({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return const MaterialApp(
+                title: 'Mayajaal',
+                home: WebViewScreen(),
+                debugShowCheckedModeBanner: false,
+              );
+            }
+          }
+
+          class WebViewScreen extends StatefulWidget {
+            const WebViewScreen({super.key});
+
+            @override
+            State<WebViewScreen> createState() => _WebViewScreenState();
+          }
+
+          class _WebViewScreenState extends State<WebViewScreen> {
+            late final WebViewController controller;
+
+            @override
+            void initState() {
+              super.initState();
+              controller = WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unlimited)
+                ..setBackgroundColor(Colors.white)
+                ..loadRequest(Uri.parse('https://www.google.com'));
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(title: const Text('Mayajaal Video Streaming')),
+                body: WebViewWidget(controller: controller),
+              );
+            }
+          }
+          EOF
+
       - name: Configure Android Manifest and Gradle
         run: |
           MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
@@ -55,7 +132,6 @@ jobs:
             sed -i 's/minSdkVersion.*/minSdkVersion 21/g' $GRADLE_FILE
             sed -i 's/minSdk =.*/minSdk = 21/g' $GRADLE_FILE
             
-            # Force release build to use debug signing config
             if ! grep -q "signingConfig signingConfigs.debug" "$GRADLE_FILE"; then
               sed -i '/buildTypes {/,/}/ { /release {/ { n; s/.*/        signingConfig signingConfigs.debug/ } }' $GRADLE_FILE
             fi
