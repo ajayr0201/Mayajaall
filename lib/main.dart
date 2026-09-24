@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,12 +11,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Mayajaal',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: const WebViewScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -30,114 +29,65 @@ class WebViewScreen extends StatefulWidget {
 }
 
 class _WebViewScreenState extends State<WebViewScreen> {
-  late final WebViewController _controller;
+  late final WebViewController controller;
   final TextEditingController _urlController = TextEditingController();
-  bool isLoading = true;
-
-  final String defaultUrl = 'https://live-score-website-alpha.vercel.app/f/455ezs';
 
   @override
   void initState() {
     super.initState();
-    _urlController.text = defaultUrl;
-    _initWebView(defaultUrl);
-  }
-
-  void _initWebView(String url) {
-    setState(() {
-      isLoading = true;
-    });
-
-    late final PlatformWebViewControllerCreationParams params;
-    if (WebViewPlatform.instance is AndroidWebViewPlatform) {
-      params = AndroidWebViewControllerCreationParams();
-    } else {
-      params = const PlatformWebViewControllerCreationParams();
-    }
-
-    WebViewController controller = WebViewController.fromPlatformCreationParams(params);
-
-    controller
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unlimited)
+      ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageFinished: (String url) {
-            setState(() {
-              isLoading = false;
-            });
-          },
+          onProgress: (int progress) {},
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
+          onWebResourceError: (WebResourceError error) {},
         ),
       )
-      ..loadRequest(Uri.parse(url));
-
-    if (controller.platform is AndroidWebViewController) {
-      (controller.platform as AndroidWebViewController)
-          .setMediaPlaybackRequiresUserGesture(false);
-    }
-
-    setState(() {
-      _controller = controller;
-      _urlController.text = url;
-    });
+      ..loadRequest(Uri.parse('https://google.com'));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Mayajaal Video Streaming'),
-        backgroundColor: Colors.grey[900],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _urlController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Enter Vercel Link...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      filled: true,
-                      fillColor: Colors.grey[850],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
+                    decoration: const InputDecoration(
+                      hintText: 'Enter link here...',
+                      border: OutlineInputBorder(),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
                   onPressed: () {
-                    String newUrl = _urlController.text.trim();
-                    if (newUrl.isNotEmpty) {
-                      _initWebView(newUrl);
+                    final urlText = _urlController.text.trim();
+                    if (urlText.isNotEmpty) {
+                      final uri = Uri.parse(
+                        urlText.startsWith('http') ? urlText : 'https://$urlText',
+                      );
+                      controller.loadRequest(uri);
                     }
                   },
-                  child: const Text('Load', style: TextStyle(color: Colors.white)),
+                  child: const Text('Load'),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: Stack(
-              children: [
-                WebViewWidget(controller: _controller),
-                if (isLoading)
-                  const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-              ],
-            ),
+            child: WebViewWidget(controller: controller),
           ),
         ],
       ),
