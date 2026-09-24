@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// Import for Android specific settings
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 void main() {
@@ -71,13 +70,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
       )
       ..loadRequest(Uri.parse(url));
 
-    // Enable media playback without user gesture for Android
     if (controller.platform is AndroidWebViewController) {
       (controller.platform as AndroidWebViewController)
           .setMediaPlaybackRequiresUserGesture(false);
     }
 
-    _controller = controller;
+    setState(() {
+      _controller = controller;
+    });
   }
 
   @override
@@ -90,7 +90,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ),
       body: Column(
         children: [
-          // URL Input Box
+          // URL Input Box & Load Button
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -118,8 +118,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   onPressed: () {
-                    if (_urlController.text.isNotEmpty) {
-                      _initWebView(_urlController.text.trim());
+                    String newUrl = _urlController.text.trim();
+                    if (newUrl.isNotEmpty) {
+                      // Yahan hum ensure kar rahe hain ki naya URL hi load ho
+                      _controller.loadRequest(Uri.parse(newUrl));
+                      setState(() {
+                        isLoading = true;
+                      });
                     }
                   },
                   child: const Text('Load', style: TextStyle(color: Colors.white)),
