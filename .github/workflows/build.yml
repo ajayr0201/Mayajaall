@@ -29,21 +29,18 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
-      - name: Fix Min SDK and Add Internet Permission
+      - name: Fix Android Manifest and SDK Path
         run: |
-          # 1. Update minSdkVersion in build.gradle safely using sed
+          # 1. Ensure AndroidManifest.xml exists where Flutter looks for it
+          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
+            cp android/app/src/main/AndroidManifest.xml android/AndroidManifest.xml
+          fi
+
+          # 2. Fix Min SDK Version in build.gradle
           GRADLE_FILE="android/app/build.gradle"
           if [ -f "$GRADLE_FILE" ]; then
             sed -i 's/minSdkVersion.*/minSdkVersion 21/g' $GRADLE_FILE
             sed -i 's/minSdk =.*/minSdk = 21/g' $GRADLE_FILE
-          fi
-
-          # 2. Ensure AndroidManifest.xml has Internet permission
-          MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_FILE" ]; then
-            if ! grep -q "android.permission.INTERNET" "$MANIFEST_FILE"; then
-              sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_FILE"
-            fi
           fi
 
       - name: Build Release APK
