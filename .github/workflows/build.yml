@@ -41,7 +41,7 @@ jobs:
           flutter create . --platforms=android --org com.example.mayajaal --project-name mayajaal
           chmod +x android/gradlew
 
-      - name: Add Internet Permission & Min SDK
+      - name: Configure Android Manifest and Gradle
         run: |
           MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST_FILE" ]; then
@@ -54,6 +54,11 @@ jobs:
           if [ -f "$GRADLE_FILE" ]; then
             sed -i 's/minSdkVersion.*/minSdkVersion 21/g' $GRADLE_FILE
             sed -i 's/minSdk =.*/minSdk = 21/g' $GRADLE_FILE
+            
+            # Force release build to use debug signing config
+            if ! grep -q "signingConfig signingConfigs.debug" "$GRADLE_FILE"; then
+              sed -i '/buildTypes {/,/}/ { /release {/ { n; s/.*/        signingConfig signingConfigs.debug/ } }' $GRADLE_FILE
+            fi
           fi
 
       - name: Get Dependencies
