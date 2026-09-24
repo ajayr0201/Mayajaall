@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,55 +16,49 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const VideoPlayerScreen(),
+      home: const WebViewScreen(),
     );
   }
 }
 
-class VideoPlayerScreen extends StatefulWidget {
-  const VideoPlayerScreen({super.key});
+class WebViewScreen extends StatefulWidget {
+  const WebViewScreen({super.key});
 
   @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+  State<WebViewScreen> createState() => _WebViewScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  VideoPlayerController? _controller;
+class _WebViewScreenState extends State<WebViewScreen> {
+  late final WebViewController _controller;
   final TextEditingController _urlController = TextEditingController();
-  
-  // Default test video
-  String currentVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
-  bool isInitialized = false;
+  bool isLoading = true;
+
+  // Aapka Vercel link default mein set kar diya hai
+  final String defaultUrl = 'https://live-score-website-alpha.vercel.app/f/egui94';
 
   @override
   void initState() {
     super.initState();
-    _urlController.text = currentVideoUrl;
-    _initPlayer(currentVideoUrl);
+    _urlController.text = defaultUrl;
+    _initWebView(defaultUrl);
   }
 
-  void _initPlayer(String url) {
-    _controller?.dispose();
+  void _initWebView(String url) {
     setState(() {
-      isInitialized = false;
+      isLoading = true;
     });
-
-    _controller = VideoPlayerController.networkUrl(Uri.parse(url))
-      ..initialize().then((_) {
-        setState(() {
-          isInitialized = true;
-        });
-        _controller?.play();
-      }).catchError((error) {
-        debugPrint("Error loading video: $error");
-      });
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    _urlController.dispose();
-    super.dispose();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            setState(() {
+              isLoading = false;
+            });
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(url));
   }
 
   @override
@@ -77,7 +71,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       ),
       body: Column(
         children: [
-          // URL Input Section
+          // URL Input Box
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -87,7 +81,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     controller: _urlController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Enter Vercel Video Link...',
+                      hintText: 'Enter Vercel Link...',
                       hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Colors.grey[850],
@@ -106,44 +100,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                   onPressed: () {
                     if (_urlController.text.isNotEmpty) {
-                      _initPlayer(_urlController.text.trim());
+                      _initWebView(_urlController.text.trim());
                     }
                   },
-                  child: const Text('Play', style: TextStyle(color: Colors.white)),
+                  child: const Text('Load', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
           ),
           
-          // Video Player Section
+          // WebView Section
           Expanded(
-            child: Center(
-              child: isInitialized && _controller != null
-                  ? AspectRatio(
-                      aspectRatio: _controller!.value.aspectRatio,
-                      child: VideoPlayer(_controller!),
-                    )
-                  : const CircularProgressIndicator(color: Colors.white),
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _controller),
+                if (isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+              ],
             ),
           ),
         ],
       ),
-      floatingActionButton: isInitialized
-          ? FloatingActionButton(
-              backgroundColor: Colors.white,
-              onPressed: () {
-                setState(() {
-                  _controller!.value.isPlaying
-                      ? _controller!.pause()
-                      : _controller!.play();
-                });
-              },
-              child: Icon(
-                _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                color: Colors.black,
-              ),
-            )
-          : null,
     );
   }
 }
