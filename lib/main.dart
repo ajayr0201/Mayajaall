@@ -30,7 +30,8 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   VideoPlayerController? _controller;
-  final String currentVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+  // Yahan hum wahi link daal kar test kar sakte hain jo aapko Vercel se mila hai
+  String currentVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
   bool isInitialized = false;
 
   @override
