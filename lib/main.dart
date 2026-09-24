@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+// Import for Android specific settings
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,8 +35,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   final TextEditingController _urlController = TextEditingController();
   bool isLoading = true;
 
-  // Aapka Vercel link default mein set kar diya hai
-  final String defaultUrl = 'https://live-score-website-alpha.vercel.app/f/egui94';
+  final String defaultUrl = 'https://live-score-website-alpha.vercel.app/f/455ezs';
 
   @override
   void initState() {
@@ -47,7 +48,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
     setState(() {
       isLoading = true;
     });
-    _controller = WebViewController()
+
+    late final PlatformWebViewControllerCreationParams params;
+    if (WebViewPlatform.instance is AndroidWebViewPlatform) {
+      params = AndroidWebViewControllerCreationParams();
+    } else {
+      params = const PlatformWebViewControllerCreationParams();
+    }
+
+    WebViewController controller = WebViewController.fromPlatformCreationParams(params);
+
+    controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -59,6 +70,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
         ),
       )
       ..loadRequest(Uri.parse(url));
+
+    // Enable media playback without user gesture for Android
+    if (controller.platform is AndroidWebViewController) {
+      (controller.platform as AndroidWebViewController)
+          .setMediaPlaybackRequiresUserGesture(false);
+    }
+
+    _controller = controller;
   }
 
   @override
