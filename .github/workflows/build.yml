@@ -26,30 +26,33 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Clean and Regenerate Fresh Android Project
-        run: |
-          rm -rf android
-          flutter create . --platforms=android --org com.example.mayajaal --project-name mayajaal
+      - name: Get Dependencies
+        run: flutter pub get
 
-      - name: Add Internet Permission to Manifest
+      - name: Setup Android & Fix Signing/SDK
         run: |
+          # 1. Ensure Android platform exists
+          if [ ! -d "android" ]; then
+            flutter create . --platforms=android --org com.example.mayajaal --project-name mayajaal
+          fi
+
+          # 2. Fix Min SDK Version to 21
+          GRADLE_FILE="android/app/build.gradle"
+          if [ -f "$GRADLE_FILE" ]; then
+            sed -i 's/minSdkVersion.*/minSdkVersion 21/g' $GRADLE_FILE
+            sed -i 's/minSdk =.*/minSdk = 21/g' $GRADLE_FILE
+            
+            # Force release build to use debug signing config so it doesn't look for missing keystore
+            sed -i '/buildTypes {/,/}/ { /release {/ { n; s/.*/        signingConfig signingConfigs.debug/ } }' $GRADLE_FILE
+          fi
+
+          # 3. Add Internet Permission to Manifest
           MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST_FILE" ]; then
             if ! grep -q "android.permission.INTERNET" "$MANIFEST_FILE"; then
               sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST_FILE"
             fi
           fi
-
-      - name: Fix Min SDK Version
-        run: |
-          GRADLE_FILE="android/app/build.gradle"
-          if [ -f "$GRADLE_FILE" ]; then
-            sed -i 's/minSdkVersion.*/minSdkVersion 21/g' $GRADLE_FILE
-            sed -i 's/minSdk =.*/minSdk = 21/g' $GRADLE_FILE
-          fi
-
-      - name: Get Dependencies
-        run: flutter pub get
 
       - name: Build Release APK
         run: flutter build apk --release
