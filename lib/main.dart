@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:app_links/app_links.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,6 +34,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController _controller;
   final TextEditingController _urlController = TextEditingController();
   bool isLoading = true;
+  late final AppLinks _appLinks;
 
   final String defaultUrl = 'https://live-score-website-alpha.vercel.app/f/455ezs';
 
@@ -41,6 +43,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     super.initState();
     _urlController.text = defaultUrl;
     _initWebView(defaultUrl);
+    _initDeepLinks();
   }
 
   void _initWebView(String url) {
@@ -77,6 +80,25 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     setState(() {
       _controller = controller;
+      _urlController.text = url;
+    });
+  }
+
+  void _initDeepLinks() {
+    _appLinks = AppLinks();
+
+    // Jab app puri tarah band ho aur link se khule
+    _appLinks.getInitialLinkUri().then((uri) {
+      if (uri != null) {
+        _initWebView(uri.toString());
+      }
+    });
+
+    // Jab app background mein ho aur naya link click ho
+    _appLinks.uriLinkStream.listen((uri) {
+      if (uri.toString().isNotEmpty) {
+        _initWebView(uri.toString());
+      }
     });
   }
 
@@ -90,7 +112,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ),
       body: Column(
         children: [
-          // URL Input Box & Load Button
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -120,11 +141,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   onPressed: () {
                     String newUrl = _urlController.text.trim();
                     if (newUrl.isNotEmpty) {
-                      // Yahan hum ensure kar rahe hain ki naya URL hi load ho
-                      _controller.loadRequest(Uri.parse(newUrl));
-                      setState(() {
-                        isLoading = true;
-                      });
+                      _initWebView(newUrl);
                     }
                   },
                   child: const Text('Load', style: TextStyle(color: Colors.white)),
@@ -132,8 +149,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
               ],
             ),
           ),
-          
-          // WebView Section
           Expanded(
             child: Stack(
               children: [
