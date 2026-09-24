@@ -26,6 +26,24 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
+      - name: Create Android Manifest if Missing
+        run: |
+          mkdir -p android/app/src/main
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          if [ ! -f "$MANIFEST_PATH" ]; then
+            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' > $MANIFEST_PATH
+            echo '    <application android:label="Mayajaal" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">' >> $MANIFEST_PATH
+            echo '        <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">' >> $MANIFEST_PATH
+            echo '            <intent-filter>' >> $MANIFEST_PATH
+            echo '                <action android:name="android.intent.action.MAIN"/>' >> $MANIFEST_PATH
+            echo '                <category android:name="android.intent.category.LAUNCHER"/>' >> $MANIFEST_PATH
+            echo '            </intent-filter>' >> $MANIFEST_PATH
+            echo '        </activity>' >> $MANIFEST_PATH
+            echo '        <meta-data android:name="flutterEmbedding" android:value="2" />' >> $MANIFEST_PATH
+            echo '    </application>' >> $MANIFEST_PATH
+            echo '</manifest>' >> $MANIFEST_PATH
+          fi
+
       - name: Clean and Get Dependencies
         run: |
           flutter clean
