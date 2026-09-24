@@ -29,37 +29,14 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
-      - name: Ensure Android Manifest Exists
-        run: |
-          mkdir -p android/app/src/main
-          
-          # Create manifest at the root android folder where flutter looks for it
-          MANIFEST_PATH="android/AndroidManifest.xml"
-          if [ ! -f "$MANIFEST_PATH" ]; then
-            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' > $MANIFEST_PATH
-            echo '    <application android:label="Mayajaal" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">' >> $MANIFEST_PATH
-            echo '        <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">' >> $MANIFEST_PATH
-            echo '            <intent-filter>' >> $MANIFEST_PATH
-            echo '                <action android:name="android.intent.action.MAIN"/>' >> $MANIFEST_PATH
-            echo '                <category android:name="android.intent.category.LAUNCHER"/>' >> $MANIFEST_PATH
-            echo '            </intent-filter>' >> $MANIFEST_PATH
-            echo '        </activity>' >> $MANIFEST_PATH
-            echo '        <meta-data android:name="flutterEmbedding" android:value="2" />' >> $MANIFEST_PATH
-            echo '    </application>' >> $MANIFEST_PATH
-            echo '</manifest>' >> $MANIFEST_PATH
-          fi
-          
-          # Copy it to src/main as well just in case Gradle looks there too
-          cp android/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+      - name: Regenerate Android Template
+        run: flutter create . --platforms=android --org com.example --project-name mayajaal
 
       - name: Fix Min SDK Version
         run: |
           BUILD_GRADLE="android/app/build.gradle"
           if [ -f "$BUILD_GRADLE" ]; then
             sed -i 's/minSdkVersion.*/minSdkVersion 21/g' $BUILD_GRADLE
-          else
-            mkdir -p android/app
-            echo "android { defaultConfig { minSdkVersion 21 } }" > $BUILD_GRADLE
           fi
 
       - name: Build Release APK
