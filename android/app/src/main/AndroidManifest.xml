@@ -1,11 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET"/>
-    
     <application
-        android:label="mayajaal"
+        android:label="Mayajaal"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,15 +22,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Terabox jaisa link handler (Deep Link) -->
+            <!-- Deep Linking Intent Filter -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Yahan aap apna domain ya brand name set kar sakte hain -->
-                <data android:scheme="https" android:host="mayajaal.com" />
+                <data android:scheme="https" android:host="live-score-website-alpha.vercel.app" />
             </intent-filter>
-
         </activity>
         
         <meta-data
