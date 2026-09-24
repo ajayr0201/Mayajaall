@@ -53,7 +53,8 @@ class _MyAppState extends State<MyApp> {
     if (uri.pathSegments.isNotEmpty) {
       String firstSegment = uri.pathSegments.first;
       if (firstSegment == "video") {
-        debugPrint("Video ID: ${uri.pathSegments.length > 1 ? uri.pathSegments[1] : 'unknown'}");
+        debugPrint(
+            "Video ID: ${uri.pathSegments.length > 1 ? uri.pathSegments[1] : 'unknown'}");
       }
     }
   }
