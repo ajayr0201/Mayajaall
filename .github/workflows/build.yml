@@ -26,6 +26,16 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Generate Fresh Android Platform
         run: |
           flutter create . --platforms=android --org com.example.mayajaal --project-name mayajaal
