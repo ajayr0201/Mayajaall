@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,50 +16,30 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const VideoPlayerScreen(),
+      home: const VideoApp(),
     );
   }
 }
 
-class VideoPlayerScreen extends StatefulWidget {
-  const VideoPlayerScreen({super.key});
+class VideoApp extends StatefulWidget {
+  const VideoApp({super.key});
 
   @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+  State<VideoApp> createState() => _VideoAppState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late VideoPlayerController _videoPlayerController;
-  ChewieController? _chewieController;
+class _VideoAppState extends State<VideoApp> {
+  late VideoPlayerController _controller;
 
   @override
   void initState() {
     super.initState();
-    _initPlayer();
-  }
-
-  void _initPlayer() async {
-    // Yahan aapke video ka direct link chalega
-    _videoPlayerController = VideoPlayerController.networkUrl(
-      Uri.parse('https://www.flutter.dev/docs/codelabs/layout/images/owl.mp4'),
-    );
-
-    await _videoPlayerController.initialize();
-
-    _chewieController = ChewieController(
-      videoPlayerController: _videoPlayerController,
-      autoPlay: true,
-      looping: false,
-    );
-
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
-    super.dispose();
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse('https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'),
+    )..initialize().then((_) {
+        setState(() {});
+        _controller.play();
+      });
   }
 
   @override
@@ -70,11 +49,31 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         title: const Text('Mayajaal Video Player'),
       ),
       body: Center(
-        child: _chewieController != null &&
-                _chewieController!.videoPlayerController.value.isInitialized
-            ? Chewie(controller: _chewieController!)
+        child: _controller.value.isInitialized
+            ? AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              )
             : const CircularProgressIndicator(),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            _controller.value.isPlaying
+                ? _controller.pause()
+                : _controller.play();
+          });
+        },
+        child: Icon(
+          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+        ),
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
