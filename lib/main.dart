@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:app_links/app_links.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,7 +33,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController _controller;
   final TextEditingController _urlController = TextEditingController();
   bool isLoading = true;
-  late final AppLinks _appLinks;
 
   final String defaultUrl = 'https://live-score-website-alpha.vercel.app/f/455ezs';
 
@@ -43,7 +41,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
     super.initState();
     _urlController.text = defaultUrl;
     _initWebView(defaultUrl);
-    _initDeepLinks();
   }
 
   void _initWebView(String url) {
@@ -81,24 +78,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
     setState(() {
       _controller = controller;
       _urlController.text = url;
-    });
-  }
-
-  void _initDeepLinks() {
-    _appLinks = AppLinks();
-
-    // Jab app puri tarah band ho aur link se khule
-    _appLinks.getInitialLinkUri().then((uri) {
-      if (uri != null) {
-        _initWebView(uri.toString());
-      }
-    });
-
-    // Jab app background mein ho aur naya link click ho
-    _appLinks.uriLinkStream.listen((uri) {
-      if (uri.toString().isNotEmpty) {
-        _initWebView(uri.toString());
-      }
     });
   }
 
