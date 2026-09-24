@@ -26,7 +26,10 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Create Android Manifest if Missing
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Ensure Android Manifest Exists
         run: |
           mkdir -p android/app/src/main
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
@@ -43,11 +46,6 @@ jobs:
             echo '    </application>' >> $MANIFEST_PATH
             echo '</manifest>' >> $MANIFEST_PATH
           fi
-
-      - name: Clean and Get Dependencies
-        run: |
-          flutter clean
-          flutter pub get
 
       - name: Fix Min SDK Version
         run: |
