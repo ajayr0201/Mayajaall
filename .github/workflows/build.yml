@@ -26,7 +26,7 @@ jobs:
           flutter-version: '3.19.x'
           channel: 'stable'
 
-      - name: Completely Wipe and Recreate Android v2 Project
+      - name: Clean and Regenerate Android Project
         run: |
           rm -rf android
           flutter create . --platforms=android --org com.example.mayajaal --project-name mayajaal
@@ -40,7 +40,7 @@ jobs:
             fi
           fi
 
-      - name: Set Min SDK to 21
+      - name: Set Min SDK Version to 21
         run: |
           GRADLE_FILE="android/app/build.gradle"
           if [ -f "$GRADLE_FILE" ]; then
