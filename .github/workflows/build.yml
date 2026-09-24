@@ -107,8 +107,8 @@ jobs:
           }
           EOF
 
-      - name: Build Release APK
-        run: flutter build apk --release
+      - name: Build Release APK with Detailed Logs
+        run: flutter build apk --release --verbose --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
