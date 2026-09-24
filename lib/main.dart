@@ -24,9 +24,7 @@ class _MyAppState extends State<MyApp> {
     _initDeepLinks();
   }
 
-  // Deep link initialize karo
   Future<void> _initDeepLinks() async {
-    // App band thi tab ka link check karo
     try {
       final Uri? initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
@@ -36,7 +34,6 @@ class _MyAppState extends State<MyApp> {
       debugPrint("Initial link error: $e");
     }
 
-    // App khuli hui hai tab link aaye
     _linkSubscription = _appLinks.uriLinkStream.listen(
       (Uri uri) {
         _handleLink(uri);
@@ -47,21 +44,15 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  // Link handle karo
   void _handleLink(Uri uri) {
     debugPrint("Link aaya: $uri");
     setState(() {
       _incomingLink = uri.toString();
     });
 
-    // Yahan apni logic lagao:
-    // Jaise agar link mein /video/123 hai toh video screen kholo
-    
-    // Example:
     if (uri.pathSegments.isNotEmpty) {
       String firstSegment = uri.pathSegments.first;
       if (firstSegment == "video") {
-        // Video screen par navigate karo
         debugPrint("Video ID: ${uri.pathSegments.length > 1 ? uri.pathSegments[1] : 'unknown'}");
       }
     }
