@@ -89,7 +89,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: Create build.gradle (app level)
+      - name: Create build.gradle (app level) WITH namespace
         run: |
           cat > android/app/build.gradle << 'EOF'
           def localProperties = new Properties()
@@ -120,6 +120,7 @@ jobs:
           apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
           android {
+              namespace 'com.example.mayajaall'
               compileSdkVersion 34
               ndkVersion flutter.ndkVersion
 
