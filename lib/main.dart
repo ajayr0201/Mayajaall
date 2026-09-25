@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +17,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
-  String _incomingLink = "Koi link nahi aaya abhi";
+  String? _incomingUrl;
 
   @override
   void initState() {
@@ -27,36 +28,19 @@ class _MyAppState extends State<MyApp> {
   Future<void> _initDeepLinks() async {
     try {
       final Uri? initialUri = await _appLinks.getInitialLink();
-      if (initialUri != null) {
-        _handleLink(initialUri);
-      }
+      if (initialUri != null) _handleLink(initialUri);
     } catch (e) {
       debugPrint("Initial link error: $e");
     }
-
     _linkSubscription = _appLinks.uriLinkStream.listen(
-      (Uri uri) {
-        _handleLink(uri);
-      },
-      onError: (err) {
-        debugPrint("Link stream error: $err");
-      },
+      (Uri uri) => _handleLink(uri),
+      onError: (err) => debugPrint("Link stream error: $err"),
     );
   }
 
   void _handleLink(Uri uri) {
     debugPrint("Link aaya: $uri");
-    setState(() {
-      _incomingLink = uri.toString();
-    });
-
-    if (uri.pathSegments.isNotEmpty) {
-      String firstSegment = uri.pathSegments.first;
-      if (firstSegment == "video") {
-        debugPrint(
-            "Video ID: ${uri.pathSegments.length > 1 ? uri.pathSegments[1] : 'unknown'}");
-      }
-    }
+    setState(() => _incomingUrl = uri.toString());
   }
 
   @override
@@ -70,19 +54,16 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Mayajaall',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        useMaterial3: true,
-      ),
-      home: HomeScreen(incomingLink: _incomingLink),
+      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
+      home: _incomingUrl == null
+          ? const HomeScreen()
+          : WebViewScreen(url: _incomingUrl!),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
-  final String incomingLink;
-
-  const HomeScreen({super.key, required this.incomingLink});
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -92,49 +73,68 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
-      body: Center(
+      body: const Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.link,
-                size: 80,
-                color: Colors.deepPurple,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                "Deep Link Test",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                "Incoming Link:",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: SelectableText(
-                  incomingLink,
-                  style: const TextStyle(fontSize: 14),
+              Icon(Icons.link, size: 80, color: Colors.deepPurple),
+              SizedBox(height: 20),
+              Text("Mayajaall",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text("Koi link open karo app mein aane ke liye",
                   textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 40),
-              const Text(
-                "Ab browser mein apna link kholo,\nyeh screen automatically update hogi.",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
+                  style: TextStyle(color: Colors.grey)),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class WebViewScreen extends StatefulWidget {
+  final String url;
+  const WebViewScreen({super.key, required this.url});
+
+  @override
+  State<WebViewScreen> createState() => _WebViewScreenState();
+}
+
+class _WebViewScreenState extends State<WebViewScreen> {
+  late final WebViewController _controller;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) => setState(() => _isLoading = true),
+          onPageFinished: (url) => setState(() => _isLoading = false),
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Mayajaall"),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator()),
+        ],
       ),
     );
   }
