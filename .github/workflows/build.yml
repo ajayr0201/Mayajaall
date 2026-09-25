@@ -29,6 +29,7 @@ jobs:
         run: |
           mkdir -p android/app/src/main/kotlin/com/example/mayajaall
           mkdir -p android/app/src/main/res/drawable
+          mkdir -p android/app/src/main/res/drawable-v21
           mkdir -p android/app/src/main/res/mipmap-hdpi
           mkdir -p android/app/src/main/res/mipmap-mdpi
           mkdir -p android/app/src/main/res/mipmap-xhdpi
@@ -38,7 +39,6 @@ jobs:
           mkdir -p android/app/src/main/res/values-night
           mkdir -p android/app/src/debug
           mkdir -p android/app/src/profile
-          mkdir -p android/gradle/wrapper
 
       - name: Create MainActivity.kt
         run: |
@@ -49,6 +49,58 @@ jobs:
 
           class MainActivity: FlutterActivity() {
           }
+          EOF
+
+      - name: Create App Icon (ic_launcher.png)
+        run: |
+          # Simple 1x1 transparent PNG base64 (works as placeholder icon)
+          ICON_B64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+      - name: Create Theme Files (styles.xml)
+        run: |
+          cat > android/app/src/main/res/values/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+                  <item name="android:windowBackground">@android:color/white</item>
+              </style>
+              <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+                  <item name="android:windowBackground">?android:colorBackground</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > android/app/src/main/res/values-night/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+                  <item name="android:windowBackground">@android:color/black</item>
+              </style>
+              <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+                  <item name="android:windowBackground">?android:colorBackground</item>
+              </style>
+          </resources>
+          EOF
+
+      - name: Create drawable files
+        run: |
+          cat > android/app/src/main/res/drawable/launch_background.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="@android:color/white" />
+          </layer-list>
+          EOF
+
+          cat > android/app/src/main/res/drawable-v21/launch_background.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="?android:colorBackground" />
+          </layer-list>
           EOF
 
       - name: Create AndroidManifest.xml
@@ -89,7 +141,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: Create build.gradle (app level) WITH namespace
+      - name: Create build.gradle (app level)
         run: |
           cat > android/app/build.gradle << 'EOF'
           def localProperties = new Properties()
