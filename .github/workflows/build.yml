@@ -107,12 +107,17 @@ jobs:
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
-
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
                           <category android:name="android.intent.category.BROWSABLE" />
                           <data android:scheme="https" android:host="live-score-website-alpha.vercel.app" />
+                      </intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="mayajaall" />
                       </intent-filter>
                   </activity>
                   <meta-data
@@ -210,9 +215,9 @@ jobs:
       - name: Build Release APK
         run: flutter build apk --release
 
-      - name: Print SHA-256 Fingerprint
+      - name: Print SHA Fingerprints
         run: |
-          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA256
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep "SHA"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
