@@ -40,7 +40,19 @@ class _MyAppState extends State<MyApp> {
 
   void _handleLink(Uri uri) {
     debugPrint("Link aaya: $uri");
-    setState(() => _incomingUrl = uri.toString());
+
+    String finalUrl = uri.toString();
+
+    // Agar custom scheme (mayajaall://) hai, toh usme se url nikaalo
+    if (uri.scheme == 'mayajaall') {
+      if (uri.queryParameters.containsKey('url')) {
+        finalUrl = uri.queryParameters['url']!;
+      } else if (uri.path.isNotEmpty) {
+        finalUrl = 'https://live-score-website-alpha.vercel.app${uri.path}';
+      }
+    }
+
+    setState(() => _incomingUrl = finalUrl);
   }
 
   @override
