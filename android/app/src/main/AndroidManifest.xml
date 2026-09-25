@@ -17,13 +17,11 @@
               android:resource="@style/NormalTheme"
               />
             
-            <!-- Normal app launch -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- HTTPS Deep Link: Vercel domain -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -31,7 +29,6 @@
                 <data android:scheme="https" android:host="live-score-website-alpha.vercel.app" />
             </intent-filter>
 
-            <!-- Custom Scheme: mayajaall:// -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
