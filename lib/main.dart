@@ -7,9 +7,11 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// ⚠️ YAHAN APNI SUPABASE DETAILS DAALO
-const String supabaseUrl = 'YOUR_SUPABASE_URL';
-const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+// ⚠️ SUPABASE DETAILS
+const String supabaseUrl = 'https://qajayr0201-9102.supabase.co';
+const String supabaseAnonKey = 'sb_publishable_6b9xe3mDBduO-soZTk3t2A_W1sQpD5K';
+
+// ⚠️ GOOGLE WEB CLIENT ID
 const String webClientId = '985001671962-rok8qnng0rumjsd8mgr8uhr92o5vhs4n.apps.googleusercontent.com';
 
 Future<void> main() async {
