@@ -37,8 +37,6 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap-xxxhdpi
           mkdir -p android/app/src/main/res/values
           mkdir -p android/app/src/main/res/values-night
-          mkdir -p android/app/src/debug
-          mkdir -p android/app/src/profile
 
       - name: Create MainActivity.kt
         run: |
@@ -51,9 +49,8 @@ jobs:
           }
           EOF
 
-      - name: Create App Icon (ic_launcher.png)
+      - name: Create App Icon
         run: |
-          # Simple 1x1 transparent PNG base64 (works as placeholder icon)
           ICON_B64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
           echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
@@ -61,7 +58,7 @@ jobs:
           echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-      - name: Create Theme Files (styles.xml)
+      - name: Create Theme Files
         run: |
           cat > android/app/src/main/res/values/styles.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -74,7 +71,6 @@ jobs:
               </style>
           </resources>
           EOF
-
           cat > android/app/src/main/res/values-night/styles.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -85,22 +81,6 @@ jobs:
                   <item name="android:windowBackground">?android:colorBackground</item>
               </style>
           </resources>
-          EOF
-
-      - name: Create drawable files
-        run: |
-          cat > android/app/src/main/res/drawable/launch_background.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:drawable="@android:color/white" />
-          </layer-list>
-          EOF
-
-          cat > android/app/src/main/res/drawable-v21/launch_background.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:drawable="?android:colorBackground" />
-          </layer-list>
           EOF
 
       - name: Create AndroidManifest.xml
@@ -127,11 +107,12 @@ jobs:
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
+
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
                           <category android:name="android.intent.category.BROWSABLE" />
-                          <data android:scheme="https" android:host="ajayr0201.github.io" />
+                          <data android:scheme="https" android:host="live-score-website-alpha.vercel.app" />
                       </intent-filter>
                   </activity>
                   <meta-data
@@ -141,7 +122,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: Create build.gradle (app level)
+      - name: Create build.gradle (app)
         run: |
           cat > android/app/build.gradle << 'EOF'
           def localProperties = new Properties()
@@ -151,21 +132,10 @@ jobs:
                   localProperties.load(reader)
               }
           }
-
           def flutterRoot = localProperties.getProperty('flutter.sdk')
-          if (flutterRoot == null) {
-              throw new GradleException("Flutter SDK not found.")
-          }
-
-          def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-          if (flutterVersionCode == null) {
-              flutterVersionCode = '1'
-          }
-
-          def flutterVersionName = localProperties.getProperty('flutter.versionName')
-          if (flutterVersionName == null) {
-              flutterVersionName = '1.0'
-          }
+          if (flutterRoot == null) { throw new GradleException("Flutter SDK not found.") }
+          def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
+          def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
 
           apply plugin: 'com.android.application'
           apply plugin: 'kotlin-android'
@@ -175,20 +145,12 @@ jobs:
               namespace 'com.example.mayajaall'
               compileSdkVersion 34
               ndkVersion flutter.ndkVersion
-
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
               }
-
-              kotlinOptions {
-                  jvmTarget = '17'
-              }
-
-              sourceSets {
-                  main.java.srcDirs += 'src/main/kotlin'
-              }
-
+              kotlinOptions { jvmTarget = '17' }
+              sourceSets { main.java.srcDirs += 'src/main/kotlin' }
               defaultConfig {
                   applicationId "com.example.mayajaall"
                   minSdkVersion 21
@@ -196,53 +158,29 @@ jobs:
                   versionCode flutterVersionCode.toInteger()
                   versionName flutterVersionName
               }
-
               buildTypes {
-                  release {
-                      signingConfig signingConfigs.debug
-                  }
+                  release { signingConfig signingConfigs.debug }
               }
           }
-
-          flutter {
-              source '../..'
-          }
+          flutter { source '../..' }
           EOF
 
-      - name: Create build.gradle (root level)
+      - name: Create build.gradle (root)
         run: |
           cat > android/build.gradle << 'EOF'
           buildscript {
               ext.kotlin_version = '1.8.22'
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-
+              repositories { google(); mavenCentral() }
               dependencies {
                   classpath 'com.android.tools.build:gradle:7.3.0'
                   classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
               }
           }
-
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
+          allprojects { repositories { google(); mavenCentral() } }
           rootProject.buildDir = '../build'
-          subprojects {
-              project.buildDir = "${rootProject.buildDir}/${project.name}"
-          }
-          subprojects {
-              project.evaluationDependsOn(':app')
-          }
-
-          tasks.register("clean", Delete) {
-              delete rootProject.buildDir
-          }
+          subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }
+          subprojects { project.evaluationDependsOn(':app') }
+          tasks.register("clean", Delete) { delete rootProject.buildDir }
           EOF
 
       - name: Create gradle.properties
@@ -257,13 +195,10 @@ jobs:
         run: |
           cat > android/settings.gradle << 'EOF'
           include ':app'
-
           def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
           def properties = new Properties()
-
           assert localPropertiesFile.exists()
           localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
-
           def flutterSdkPath = properties.getProperty("flutter.sdk")
           assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
           apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
@@ -274,6 +209,10 @@ jobs:
 
       - name: Build Release APK
         run: flutter build apk --release
+
+      - name: Print SHA-256 Fingerprint
+        run: |
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA256
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
