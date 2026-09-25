@@ -1,9 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-void main() {
+// ⚠️ YAHAN APNI SUPABASE DETAILS DAALO
+const String supabaseUrl = 'YOUR_SUPABASE_URL';
+const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+const String webClientId = '985001671962-rok8qnng0rumjsd8mgr8uhr92o5vhs4n.apps.googleusercontent.com';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  );
+
   runApp(const MyApp());
 }
 
@@ -17,7 +33,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
-  String? _incomingUrl;
 
   @override
   void initState() {
@@ -28,31 +43,14 @@ class _MyAppState extends State<MyApp> {
   Future<void> _initDeepLinks() async {
     try {
       final Uri? initialUri = await _appLinks.getInitialLink();
-      if (initialUri != null) _handleLink(initialUri);
+      if (initialUri != null) debugPrint("Link: $initialUri");
     } catch (e) {
       debugPrint("Initial link error: $e");
     }
     _linkSubscription = _appLinks.uriLinkStream.listen(
-      (Uri uri) => _handleLink(uri),
+      (Uri uri) => debugPrint("Link: $uri"),
       onError: (err) => debugPrint("Link stream error: $err"),
     );
-  }
-
-  void _handleLink(Uri uri) {
-    debugPrint("Link aaya: $uri");
-
-    String finalUrl = uri.toString();
-
-    // Agar custom scheme (mayajaall://) hai, toh usme se url nikaalo
-    if (uri.scheme == 'mayajaall') {
-      if (uri.queryParameters.containsKey('url')) {
-        finalUrl = uri.queryParameters['url']!;
-      } else if (uri.path.isNotEmpty) {
-        finalUrl = 'https://live-score-website-alpha.vercel.app${uri.path}';
-      }
-    }
-
-    setState(() => _incomingUrl = finalUrl);
   }
 
   @override
@@ -67,38 +65,116 @@ class _MyAppState extends State<MyApp> {
       title: 'Mayajaall',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
-      home: _incomingUrl == null
-          ? const HomeScreen()
-          : WebViewScreen(url: _incomingUrl!),
+      home: const AuthGate(),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+// Auth Gate - Login check karta hai
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          return const HomeScreen();
+        } else {
+          return const LoginScreen();
+        }
+      },
+    );
+  }
+}
+
+// Login Screen - Google Sign-In
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _loading = false;
+  String _error = '';
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: webClientId,
+      );
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() => _loading = false);
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) throw 'No ID Token found.';
+
+      await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+    } catch (e) {
+      setState(() => _error = 'Error: $e');
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Mayajaall"),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.link, size: 80, color: Colors.deepPurple),
-              SizedBox(height: 20),
-              Text("Mayajaall",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              Text("Koi link open karo app mein aane ke liye",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey)),
+              const Icon(Icons.movie, size: 100, color: Colors.deepPurple),
+              const SizedBox(height: 20),
+              const Text("Mayajaall",
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              const Text("Login to continue", style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 40),
+              ElevatedButton.icon(
+                onPressed: _loading ? null : _signInWithGoogle,
+                icon: const Icon(Icons.login),
+                label: _loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Sign in with Google"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 55),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
+              ),
+              if (_error.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(_error,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center),
+              ],
             ],
           ),
         ),
@@ -107,46 +183,86 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class WebViewScreen extends StatefulWidget {
-  final String url;
-  const WebViewScreen({super.key, required this.url});
+// Home Screen
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<WebViewScreen> createState() => _WebViewScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _WebViewScreenState extends State<WebViewScreen> {
-  late final WebViewController _controller;
-  bool _isLoading = true;
+class _HomeScreenState extends State<HomeScreen> {
+  List<String> _history = [];
 
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) => setState(() => _isLoading = true),
-          onPageFinished: (url) => setState(() => _isLoading = false),
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _history = prefs.getStringList('watch_history') ?? [];
+    });
+  }
+
+  Future<void> _logout() async {
+    await Supabase.instance.client.auth.signOut();
+    await GoogleSignIn().signOut();
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Mayajaall"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
+        actions: [
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const Icon(Icons.play_circle, size: 80, color: Colors.deepPurple),
+            const SizedBox(height: 20),
+            Text("Welcome ${user?.email ?? 'User'}",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: () {
+                launchUrl(Uri.parse(
+                    'https://github.com/ajayr0201/Mayajaall/releases/latest/download/app-release.apk'));
+              },
+              icon: const Icon(Icons.download),
+              label: const Text("Download App"),
+            ),
+            const SizedBox(height: 20),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text("Watch History:",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            Expanded(
+              child: _history.isEmpty
+                  ? const Center(child: Text("No history yet"))
+                  : ListView.builder(
+                      itemCount: _history.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          leading: const Icon(Icons.history),
+                          title: Text(_history[index]),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
