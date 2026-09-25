@@ -20,13 +20,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
+            <!-- Dono domains ke liye deep linking -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="ajayr0201.github.io" />
+                <data android:scheme="https" android:host="live-score-website-alpha.vercel.app" />
+                <data android:scheme="https" android:host="q-ajayr0201-9102.vercel.app" />
             </intent-filter>
-
         </activity>
         <meta-data
             android:name="flutterEmbedding"
