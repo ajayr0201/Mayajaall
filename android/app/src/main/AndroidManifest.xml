@@ -28,12 +28,18 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            
+            <!-- Vercel Backend Deep Link Filter -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="live-score-website-alpha.vercel.app" />
+                <data android:scheme="https" 
+                      android:host="mayajaal-backend-git-main-ajayr0201-9102.vercel.app" 
+                      android:pathPrefix="/stream" />
             </intent-filter>
+
+            <!-- Custom Scheme Deep Link Filter -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
