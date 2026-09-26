@@ -15,9 +15,18 @@ const String supabaseAnonKey = 'sb_publishable_6b9xe3mDBduO-soZTk3t2A_W1sQpD5K';
 // ✅ GOOGLE WEB CLIENT ID
 const String webClientId = '985001671962-rok8qnng0rumjsd8mgr8uhr92o5vhs4n.apps.googleusercontent.com';
 
+// ✅ GLOBAL THEME NOTIFIER
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
+  // Load saved theme
+  final prefs = await SharedPreferences.getInstance();
+  final isDark = prefs.getBool('dark_theme') ?? false;
+  themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
+
   runApp(const MyApp());
 }
 
@@ -69,13 +78,28 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mayajaall',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
-      home: _incomingUrl == null
-          ? const AuthGate()
-          : VideoPlayerScreen(url: _incomingUrl!),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'Mayajaall',
+          debugShowCheckedModeBanner: false,
+          themeMode: mode,
+          theme: ThemeData(
+            primarySwatch: Colors.deepPurple,
+            brightness: Brightness.light,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            primarySwatch: Colors.deepPurple,
+            brightness: Brightness.dark,
+            useMaterial3: true,
+          ),
+          home: _incomingUrl == null
+              ? const AuthGate()
+              : VideoPlayerScreen(url: _incomingUrl!),
+        );
+      },
     );
   }
 }
@@ -168,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// HOME SCREEN - SEARCH BAR + PERMISSIONS
+// HOME SCREEN
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -185,10 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadHistory();
-    // ✅ Permissions ko 1 second baad maango (taaki UI load ho jaye)
-    Future.delayed(const Duration(seconds: 1), () {
-      _requestPermissions();
-    });
+    Future.delayed(const Duration(seconds: 1), () => _requestPermissions());
   }
 
   @override
@@ -197,25 +218,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // ✅ PERMISSIONS MANGAO (Android 15 ke hisaab se)
   Future<void> _requestPermissions() async {
     if (_permissionsChecked) return;
     _permissionsChecked = true;
-
-    // Pehle Notification maango
-    if (!await Permission.notification.isGranted) {
-      await Permission.notification.request();
-    }
-
-    // Phir Camera maango
-    if (!await Permission.camera.isGranted) {
-      await Permission.camera.request();
-    }
-
-    // Phir Storage maango (agar supported ho)
-    if (!await Permission.storage.isGranted) {
-      await Permission.storage.request();
-    }
+    if (!await Permission.notification.isGranted) await Permission.notification.request();
+    if (!await Permission.camera.isGranted) await Permission.camera.request();
+    if (!await Permission.storage.isGranted) await Permission.storage.request();
   }
 
   Future<void> _loadHistory() async {
@@ -238,6 +246,85 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await GoogleSignIn().signOut();
   }
 
+  void _showMoreMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text("More Options",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              const Divider(),
+
+              // SETTINGS
+              ListTile(
+                leading: const Icon(Icons.settings, color: Colors.deepPurple),
+                title: const Text("Settings"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+              ),
+
+              // LOGOUT
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text("Logout", style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showLogoutConfirm();
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLogoutConfirm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Logout?"),
+        content: const Text("Kya aap logout karna chahte ho?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _logout();
+            },
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _searchAndPlay() {
     String input = _linkController.text.trim();
     if (input.isEmpty) {
@@ -246,11 +333,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
       return;
     }
-
     if (input.startsWith('mayajaall://')) {
       input = input.replaceFirst('mayajaall://', 'https://live-score-website-alpha.vercel.app/');
     }
-
     _saveToHistory(input);
     _linkController.clear();
     Navigator.push(
@@ -269,7 +354,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: _showMoreMenu,
+          ),
         ],
       ),
       body: Padding(
@@ -281,7 +369,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
 
-            // SEARCH BAR
             Container(
               decoration: BoxDecoration(
                 color: Colors.grey[100],
@@ -365,55 +452,158 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-// VIDEO PLAYER SCREEN
-class VideoPlayerScreen extends StatefulWidget {
-  final String url;
-  const VideoPlayerScreen({super.key, required this.url});
+// SETTINGS SCREEN
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
   @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late final WebViewController _controller;
-  bool _isLoading = true;
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _darkTheme = false;
+  String _language = 'English';
+  String _downloadLocation = 'Internal Storage / Mayajaall';
+
+  final List<String> _languages = [
+    'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu',
+    'Marathi', 'Gujarati', 'Kannada', 'Malayalam', 'Punjabi',
+  ];
+
+  final List<String> _downloadLocations = [
+    'Internal Storage / Mayajaall',
+    'Internal Storage / Download',
+    'Internal Storage / Movies',
+    'SD Card / Mayajaall',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) => setState(() => _isLoading = true),
-          onPageFinished: (url) => setState(() => _isLoading = false),
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _darkTheme = prefs.getBool('dark_theme') ?? false;
+      _language = prefs.getString('language') ?? 'English';
+      _downloadLocation = prefs.getString('download_location') ?? 'Internal Storage / Mayajaall';
+    });
+  }
+
+  Future<void> _saveDarkTheme(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dark_theme', value);
+    themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
+    setState(() => _darkTheme = value);
+  }
+
+  Future<void> _saveLanguage(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', value);
+    setState(() => _language = value);
+  }
+
+  Future<void> _saveDownloadLocation(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('download_location', value);
+    setState(() => _downloadLocation = value);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mayajaall"),
+        title: const Text("Settings"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () {
-              launchUrl(Uri.parse(
-                  'https://github.com/ajayr0201/Mayajaall/releases/latest/download/app-release.apk'));
-            },
-          ),
-        ],
       ),
-      body: Stack(
+      body: ListView(
         children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          // DARK THEME
+          SwitchListTile(
+            secondary: const Icon(Icons.dark_mode, color: Colors.deepPurple),
+            title: const Text("Dark Theme"),
+            subtitle: Text(_darkTheme ? "On" : "Off"),
+            value: _darkTheme,
+            onChanged: _saveDarkTheme,
+          ),
+          const Divider(),
+
+          // LANGUAGE
+          ListTile(
+            leading: const Icon(Icons.language, color: Colors.deepPurple),
+            title: const Text("Language"),
+            subtitle: Text(_language),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showLanguageDialog(),
+          ),
+          const Divider(),
+
+          // DOWNLOAD LOCATION
+          ListTile(
+            leading: const Icon(Icons.download, color: Colors.deepPurple),
+            title: const Text("Download Location"),
+            subtitle: Text(_downloadLocation),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showDownloadLocationDialog(),
+          ),
+          const Divider(),
         ],
       ),
     );
   }
-}
+
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Select Language"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _languages.length,
+            itemBuilder: (context, index) {
+              final lang = _languages[index];
+              return RadioListTile<String>(
+                title: Text(lang),
+                value: lang,
+                groupValue: _language,
+                onChanged: (value) {
+                  if (value != null) {
+                    _saveLanguage(value);
+                    Navigator.pop(context);
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDownloadLocationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Select Download Location"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _downloadLocations.length,
+            itemBuilder: (context, index) {
+              final loc = _downloadLocations[index];
+              return RadioListTile<String>(
+                title: Text(loc),
+                value: loc,
+                groupValue: _downloadLocation,
+                onChanged
