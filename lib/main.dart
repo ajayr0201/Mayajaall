@@ -175,7 +175,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final TextEditingController _linkController = TextEditingController();
   List<String> _history = [];
   bool _permissionsChecked = false;
@@ -183,20 +183,39 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHistory();
-    _requestPermissions();
+    // ✅ Permissions ko 1 second baad maango (taaki UI load ho jaye)
+    Future.delayed(const Duration(seconds: 1), () {
+      _requestPermissions();
+    });
   }
 
-  // ✅ PERMISSIONS MANGAO
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // ✅ PERMISSIONS MANGAO (Android 15 ke hisaab se)
   Future<void> _requestPermissions() async {
     if (_permissionsChecked) return;
     _permissionsChecked = true;
 
-    await [
-      Permission.storage,
-      Permission.camera,
-      Permission.notification,
-    ].request();
+    // Pehle Notification maango
+    if (!await Permission.notification.isGranted) {
+      await Permission.notification.request();
+    }
+
+    // Phir Camera maango
+    if (!await Permission.camera.isGranted) {
+      await Permission.camera.request();
+    }
+
+    // Phir Storage maango (agar supported ho)
+    if (!await Permission.storage.isGranted) {
+      await Permission.storage.request();
+    }
   }
 
   Future<void> _loadHistory() async {
