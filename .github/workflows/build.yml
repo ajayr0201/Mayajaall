@@ -49,15 +49,6 @@ jobs:
           }
           EOF
 
-      - name: Create App Icon
-        run: |
-          ICON_B64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          echo "$ICON_B64" | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
       - name: Create Theme Files
         run: |
           cat > android/app/src/main/res/values/styles.xml << 'EOF'
@@ -211,6 +202,9 @@ jobs:
 
       - name: Get Dependencies
         run: flutter pub get
+
+      - name: Generate Launcher Icons
+        run: flutter pub run flutter_launcher_icons
 
       - name: Build Release APK
         run: flutter build apk --release
