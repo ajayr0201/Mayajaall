@@ -16,13 +16,12 @@ const String supabaseAnonKey = 'sb_publishable_6b9xe3mDBduO-soZTk3t2A_W1sQpD5K';
 const String webClientId = '985001671962-rok8qnng0rumjsd8mgr8uhr92o5vhs4n.apps.googleusercontent.com';
 
 // ✅ GLOBAL THEME NOTIFIER
-final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
-  // Load saved theme
   final prefs = await SharedPreferences.getInstance();
   final isDark = prefs.getBool('dark_theme') ?? false;
   themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
@@ -199,7 +198,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _linkController = TextEditingController();
   List<String> _history = [];
   bool _permissionsChecked = false;
@@ -207,15 +206,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _loadHistory();
     Future.delayed(const Duration(seconds: 1), () => _requestPermissions());
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
   }
 
   Future<void> _requestPermissions() async {
@@ -249,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _showMoreMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -267,12 +258,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text("More Options",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("More Options", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               const Divider(),
-
-              // SETTINGS
               ListTile(
                 leading: const Icon(Icons.settings, color: Colors.deepPurple),
                 title: const Text("Settings"),
@@ -284,8 +272,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   );
                 },
               ),
-
-              // LOGOUT
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text("Logout", style: TextStyle(color: Colors.red)),
@@ -368,10 +354,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Text("Welcome, ${user?.email ?? 'User'}",
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
-
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: Colors.deepPurple, width: 1.5),
               ),
@@ -401,11 +386,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(height: 25),
-
-            const Text("Watch History:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text("Watch History:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-
             Expanded(
               child: _history.isEmpty
                   ? const Center(
@@ -520,7 +502,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         children: [
-          // DARK THEME
           SwitchListTile(
             secondary: const Icon(Icons.dark_mode, color: Colors.deepPurple),
             title: const Text("Dark Theme"),
@@ -529,8 +510,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: _saveDarkTheme,
           ),
           const Divider(),
-
-          // LANGUAGE
           ListTile(
             leading: const Icon(Icons.language, color: Colors.deepPurple),
             title: const Text("Language"),
@@ -539,8 +518,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showLanguageDialog(),
           ),
           const Divider(),
-
-          // DOWNLOAD LOCATION
           ListTile(
             leading: const Icon(Icons.download, color: Colors.deepPurple),
             title: const Text("Download Location"),
@@ -606,4 +583,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(loc),
                 value: loc,
                 groupValue: _downloadLocation,
-                onChanged
+                onChanged: (value) {
+                  if (value != null) {
+                    _saveDownloadLocation(value);
+                    Navigator.pop(context);
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// VID
