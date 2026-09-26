@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // ✅ SUPABASE DETAILS
 const String supabaseUrl = 'https://inxlnctaixbkfblwlmhr.supabase.co';
@@ -167,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// HOME SCREEN - SEARCH BAR KE SAATH
+// HOME SCREEN - SEARCH BAR + PERMISSIONS
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -177,11 +178,25 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _linkController = TextEditingController();
   List<String> _history = [];
+  bool _permissionsChecked = false;
 
   @override
   void initState() {
     super.initState();
     _loadHistory();
+    _requestPermissions();
+  }
+
+  // ✅ PERMISSIONS MANGAO
+  Future<void> _requestPermissions() async {
+    if (_permissionsChecked) return;
+    _permissionsChecked = true;
+
+    await [
+      Permission.storage,
+      Permission.camera,
+      Permission.notification,
+    ].request();
   }
 
   Future<void> _loadHistory() async {
@@ -213,7 +228,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Agar link mayajaall:// se shuru hota hai, toh https mein convert karo
     if (input.startsWith('mayajaall://')) {
       input = input.replaceFirst('mayajaall://', 'https://live-score-website-alpha.vercel.app/');
     }
@@ -244,7 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome message
             Text("Welcome, ${user?.email ?? 'User'}",
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
@@ -283,12 +296,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 25),
 
-            // Watch History Header
             const Text("Watch History:",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
 
-            // Watch History List
             Expanded(
               child: _history.isEmpty
                   ? const Center(
