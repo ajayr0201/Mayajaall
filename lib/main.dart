@@ -29,6 +29,9 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+// ============================================
+// MAIN APP
+// ============================================
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
   @override
@@ -103,7 +106,9 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
+// ============================================
 // AUTH GATE
+// ============================================
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
   @override
@@ -122,7 +127,9 @@ class AuthGate extends StatelessWidget {
   }
 }
 
+// ============================================
 // LOGIN SCREEN
+// ============================================
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
   @override
@@ -171,7 +178,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ElevatedButton.icon(
                 onPressed: _loading ? null : _signInWithGoogle,
                 icon: const Icon(Icons.login),
-                label: _loading ? const CircularProgressIndicator(color: Colors.white) : const Text("Sign in with Google"),
+                label: _loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Sign in with Google"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   foregroundColor: Colors.white,
@@ -191,7 +200,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+// ============================================
 // HOME SCREEN
+// ============================================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -251,14 +262,16 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const SizedBox(height: 10),
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: Colors.grey[400],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
-              const Text("More Options", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("More Options",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               const Divider(),
               ListTile(
@@ -333,6 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -356,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 20),
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: isDark ? Colors.grey[900] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: Colors.deepPurple, width: 1.5),
               ),
@@ -379,14 +393,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.play_circle_fill, color: Colors.deepPurple, size: 35),
+                    icon: const Icon(Icons.play_circle_fill,
+                        color: Colors.deepPurple, size: 35),
                     onPressed: _searchAndPlay,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 25),
-            const Text("Watch History:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text("Watch History:",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             Expanded(
               child: _history.isEmpty
@@ -406,7 +422,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
                           child: ListTile(
-                            leading: const Icon(Icons.play_circle_outline, color: Colors.deepPurple),
+                            leading: const Icon(Icons.play_circle_outline,
+                                color: Colors.deepPurple),
                             title: Text(
                               _history[index].length > 60
                                   ? "${_history[index].substring(0, 60)}..."
@@ -418,7 +435,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => VideoPlayerScreen(url: _history[index]),
+                                  builder: (context) =>
+                                      VideoPlayerScreen(url: _history[index]),
                                 ),
                               );
                             },
@@ -434,7 +452,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ============================================
 // SETTINGS SCREEN
+// ============================================
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
   @override
@@ -469,7 +489,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _darkTheme = prefs.getBool('dark_theme') ?? false;
       _language = prefs.getString('language') ?? 'English';
-      _downloadLocation = prefs.getString('download_location') ?? 'Internal Storage / Mayajaall';
+      _downloadLocation =
+          prefs.getString('download_location') ?? 'Internal Storage / Mayajaall';
     });
   }
 
@@ -575,33 +596,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _downloadLocations.length,
-            itemBuilder: (context, index) {
-              final loc = _downloadLocations[index];
-              return RadioListTile<String>(
-                title: Text(loc),
-                value: loc,
-                groupValue: _downloadLocation,
-                onChanged: (value) {
-                  if (value != null) {
-                    _saveDownloadLocation(value);
-                    Navigator.pop(context);
-                  }
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// VID
+            
